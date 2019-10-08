@@ -96,6 +96,10 @@ class VoilaHandler(JupyterHandler):
             'notebook_execute': self._jinja_notebook_execute,
         }
 
+        # Currenly _jinja_kernel_start is executed from a different thread, which causes the websocket connection from
+        # the frontend to fail. Instead, we start it beforehand, and just return the kernel_id in _jinja_kernel_start
+        self.kernel_id = await tornado.gen.maybe_future(self.kernel_manager.start_kernel(kernel_name=self.notebook.metadata.kernelspec.name, path=self.cwd))
+
         # Compose reply
         self.set_header('Content-Type', 'text/html')
         # render notebook in snippets, and flush them out to the browser can render progresssively
@@ -111,10 +115,10 @@ class VoilaHandler(JupyterHandler):
     @tornado.gen.coroutine
     def _jinja_kernel_start(self):
         assert not self.kernel_started, "kernel was already started"
-        # Launch kernel
-        kernel_id = yield tornado.gen.maybe_future(self.kernel_manager.start_kernel(kernel_name=self.notebook.metadata.kernelspec.name, path=self.cwd))
+        # See command above aboout not being able to start the kernel from a different thread
+        # kernel_id = yield tornado.gen.maybe_future(self.kernel_manager.start_kernel(kernel_name=self.notebook.metadata.kernelspec.name, path=self.cwd))
         self.kernel_started = True
-        return kernel_id
+        return self.kernel_id
 
     def _jinja_notebook_execute(self, nb, kernel_id):
         km = self.kernel_manager.get_kernel(kernel_id)
