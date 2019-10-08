@@ -116,7 +116,6 @@ class VoilaHandler(JupyterHandler):
     def _jinja_kernel_start(self):
         assert not self.kernel_started, "kernel was already started"
         # See command above aboout not being able to start the kernel from a different thread
-        # kernel_id = yield tornado.gen.maybe_future(self.kernel_manager.start_kernel(kernel_name=self.notebook.metadata.kernelspec.name, path=self.cwd))
         self.kernel_started = True
         return self.kernel_id
 
@@ -150,11 +149,11 @@ class VoilaHandler(JupyterHandler):
         if model.get('type') == 'notebook':
             notebook = model['content']
             notebook = await self.fix_notebook(notebook)
-            return notebook  # TODO py2: replace by return
+            return notebook
         elif extension in self.voila_configuration.extension_language_mapping:
             language = self.voila_configuration.extension_language_mapping[extension]
             notebook = await self.create_notebook(model, language=language)
-            return notebook  # TODO py2: replace by return
+            return notebook
         else:
             self.redirect_to_file(path)
             return None
